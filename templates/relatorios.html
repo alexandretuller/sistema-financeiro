@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos Financeiros</title>
+    <style>
+        .grid-container {
+            display: grid;
+            grid-template-columns: auto;
+            gap: 10px;
+            justify-content: center;
+        }
+        .grid-item {
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+        button {
+            background-color: #4CAF50; /* Default Green */
+            color: white;
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 250px;
+            height: 50px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        select, input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="home-button">
+        <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+    </div>
+    <div class="container-centralizado" style="margin: 0 auto;">
+        <h1 style="text-align: center;">Documentos Financeiros</h1>
+
+        <div class="details">
+            <label for="ano">Ano:</label>
+            <select id="ano">
+                <option value="">Selecione o Ano</option>
+                {% for ano in anos %}
+                <option value="{{ ano }}">{{ ano }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="mes">Semestre/Anual:</label>
+            <select id="mes">
+                <option value="">Selecione o semestre ou anual</option>
+                <option value="1">1º Semestre</option>
+                <option value="2">2º Semestre</option>
+                <option value="3">Anual</option>                
+                
+            </select>
+
+            <label for="fonte">Fonte:</label>
+            <select id="fonte">
+                <option value="">Selecione a Fonte</option>
+                {% for fonte in fontes %}
+                <option value="{{ fonte }}">{{ fonte }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="anoMandato">Ano de Mandato:</label>
+            <select id="anoMandato">
+                <option value="">Selecione o Ano de Mandato</option>
+                {% for mandato in mandato %}
+                <option value="{{ mandato }}">{{ mandato }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="dataAssinatura">Data de Assinatura:</label>
+            <input type="date" id="dataAssinatura">
+        </div>
+
+        <div class="grid-container">
+            <div class="grid-item">
+                <button id="btnParecer" onclick="gerarParecer()">PARECER DO CONSELHO FISCAL</button>
+                <button id="btnOficio" onclick="gerarOficio()">OFÍCIO</button>
+                <button id="btnDemonstrativo" onclick="gerarDemonstrativo()">DEMONSTRATIVO ANUAL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function gerarParecer() {
+            const ano = document.getElementById('ano').value;
+            const mes = document.getElementById('mes').value;
+            const fonte = document.getElementById('fonte').value;
+            const anoMandato = document.getElementById('anoMandato').value;
+            const dataAssinatura = document.getElementById('dataAssinatura').value;
+
+            if (!ano || !mes || !fonte || !anoMandato || !dataAssinatura) {
+                alert("Por favor, preencha todos os campos antes de gerar o parecer.");
+                return;
+            }
+            window.open(`/gerar_parecer?ano=${ano}&mes=${mes}&fonte=${fonte}&anoMandato=${anoMandato}&data=${dataAssinatura}`, '_blank');
+        }
+
+        function gerarOficio() {
+            const ano = document.getElementById('ano').value;
+            const mes = document.getElementById('mes').value;
+            const fonte = document.getElementById('fonte').value;
+            const anoMandato = document.getElementById('anoMandato').value;
+            const dataAssinatura = document.getElementById('dataAssinatura').value;
+
+            if (!ano || !mes || !fonte || !anoMandato || !dataAssinatura) {
+                alert("Por favor, preencha todos os campos antes de gerar o ofício.");
+                return;
+            }
+            window.open(`/gerar_oficio?ano=${ano}&mes=${mes}&fonte=${fonte}&anoMandato=${anoMandato}&data=${dataAssinatura}`, '_blank');
+        }
+
+        function gerarDemonstrativo() {
+            const ano = document.getElementById('ano').value;
+            const mes = document.getElementById('mes').value;
+            const fonte = document.getElementById('fonte').value;
+            const anoMandato = document.getElementById('anoMandato').value;
+            const dataAssinatura = document.getElementById('dataAssinatura').value;
+
+            if (!ano || !mes || !fonte || !anoMandato || !dataAssinatura) {
+                alert("Por favor, preencha todos os campos antes de gerar o demonstrativo.");
+                return;
+            }
+            window.open(`/gerar_demonstrativo?ano=${ano}&mes=${mes}&fonte=${fonte}&anoMandato=${anoMandato}&data=${dataAssinatura}`, '_blank');
+        }
+    </script>
+</body>
+</html>

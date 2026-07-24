@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <meta charset="UTF-8">
+    <title>Gerenciar Itens da Compra</title>
+    <style>
+        /* Adicione isso para o Select2 ficar bonito na sua tabela */
+        .select2-container { width: 100% !important; }
+        .referencia-excel { font-size: 0.8em; color: #d63384; display: block; margin-bottom: 2px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f7f6; }
+        .home-button { position: absolute; top: 10px; right: 10px; }
+        #formInserir { width: 90%; max-width: 1200px; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        input[type="text"], input[type="date"], select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; font-weight: bold; }
+        button:hover { opacity: 0.9; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+        button[type="submit"] { background-color: #28a745; }
+        
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .close-button { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        #filtro-item { margin: 15px 0; }
+        #lista-itens-modal { max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+        .item-modal-row { display: flex; align-items: center; padding: 8px 5px; border-bottom: 1px solid #f0f0f0; }
+        .item-modal-row:last-child { border-bottom: none; }
+        .item-modal-row input[type="checkbox"] { width: auto; margin-right: 15px; transform: scale(1.2); }
+
+        #itens-selecionados-container .item-row { display: grid; grid-template-columns: 0.5fr 3fr 1fr 1fr 1fr 1fr 0.5fr; gap: 10px; align-items: center; margin-bottom: 10px; padding: 10px; border: 1px solid #eee; border-radius: 4px; transition: background-color 0.3s; }
+        #itens-selecionados-container .item-header { font-weight: bold; background-color: #f8f9fa; }
+        .remove-item-btn { background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 4px; border: none; font-weight: bold; }
+        #contador-itens { font-weight: bold; color: #007bff; margin-left: 20px; }
+        .sequencia-duplicada { background-color: #fff0f0 !important; border-left: 3px solid #dc3545 !important; }
+
+        #totais-container {
+            padding: 15px;
+            background-color: #e9f5ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        #totais-container p {
+            margin: 5px 15px;
+            font-size: 1.1em;
+            color: #004085;
+        }
+        #totais-container strong {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gerenciar Itens da Compra</h1>
+    <div class="home-button">
+        <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script>alert("{{ messages[0] }}");</script>
+        {% endif %}
+    {% endwith %}
+
+    <form id="formInserir" method="POST" action="/inserir_item_compra" onsubmit="return validarEPrepararEnvio();">
+        <label for="idcompra">Selecione a Compra:</label>
+        <select id="idcompra" name="idcompra" required>
+            <option value="">Selecione uma compra para editar ou adicionar itens</option>
+            {% for compra in compras %}
+                <option value="{{ compra.id }}">{{ compra.id }} | {{ compra.data }} | {{ compra.descricao }} | {{ compra.fornecedor1 }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="datadocumento">Data para os Documentos:</label>
+        <input type="date" id="datadocumento" name="datadocumento">
+
+        <div id="deletados-container"></div>
+
+        <hr style="margin: 20px 0;">
+        <div style="background-color: #f8f9fa; padding: 15px; border: 1px dashed #007bff; border-radius: 5px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #007bff;">Importar via Excel</h3>
+            <p style="font-size: 0.9em; color: #666;">Formato das colunas: Descrição | Quantidade | Valor 1 | Valor 2 | Valor 3</p>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="file" id="arquivoExcel" accept=".xlsx, .xls" style="margin-bottom: 0; width: auto;">
+                <button type="button" id="btnImportarExcel" style="background-color: #17a2b8;">Carregar Arquivo</button>
+            </div>
+            <div id="loading-excel" style="display: none; color: #007bff; margin-top: 10px;">Processando arquivo... aguarde.</div>
+        </div>
+        <hr style="margin: 20px 0;">
+        <button type="button" id="btnAbrirModal" disabled>Escolher Itens Manualmente</button>
+        <span id="contador-itens"></span>
+        
+        <div id="totais-container" style="display: none;">
+            <p><strong>Total Forn. 1:</strong> <span id="total-forn1">R$ 0,00</span></p>
+            <p><strong>Total Forn. 2:</strong> <span id="total-forn2">R$ 0,00</span></p>
+            <p><strong>Total Forn. 3:</strong> <span id="total-forn3">R$ 0,00</span></p>
+        </div>
+        
+        <div id="itens-selecionados-container">
+            <div class="item-row item-header" style="display: none;">
+                <span>Seq.</span>
+                <span>Descrição do Item</span>
+                <span>Qtd.</span>
+                <span>Valor Forn. 1</span>
+                <span>Valor Forn. 2</span>
+                <span>Valor Forn. 3</span>
+                <span>Ação</span>
+            </div>
+        </div>
+
+        <hr style="margin: 20px 0;">
+        <button type="submit" id="btnSalvar" disabled>Salvar Todos os Itens</button>
+    </form>
+
+    <div id="selecaoItensModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Selecione os Itens</h2>
+                <span class="close-button" id="btnCloseModal">&times;</span>
+            </div>
+            <input type="text" id="filtro-item" placeholder="Buscar item pela descrição...">
+            <div id="lista-itens-modal"></div>
+            <div id="cadastro-novo-item" style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 15px;">
+                <h4>Cadastrar Novo Item</h4>
+                <input type="text" id="novoitem_descricao" placeholder="Descrição do novo item">
+                <input type="text" id="novoitem_unidade" placeholder="Unidade de medida (ex: UN, KG)">
+                <select id="novoitem_categoria">
+                    <option value="">Selecione a categoria</option>
+                    {% for categoria in categorias %}
+                        <option value="{{ categoria }}">{{ categoria }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" id="btnCadastrarNovoItem">Cadastrar e Adicionar</button>
+            </div>
+            <hr>
+            <button type="button" id="btnConfirmarSelecao">Confirmar Seleção</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const todosOsItens = {{ itens_ | tojson }};
+        let itensSelecionados = {};
+
+        $(document).ready(function() {
+            $('#idcompra').on('change', function() {
+                const idcompra = $(this).val();
+                if (!idcompra) {
+                    itensSelecionados = {};
+                    renderizarItensSelecionados();
+                    $('#btnAbrirModal, #btnSalvar').prop('disabled', true);
+                    $('#datadocumento').val('');
+                    return;
+                }
+                $('#btnAbrirModal, #btnSalvar').prop('disabled', false);
+
+                $.ajax({
+                    url: `/get_compra_detalhes/${idcompra}`,
+                    method: 'GET',
+                    success: function(data) {
+                        itensSelecionados = {};
+                        $('#deletados-container').empty();
+                        if (data.length > 0 && data[0].datadocumento) {
+                            const dateParts = data[0].datadocumento.split('/');
+                            const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                            $('#datadocumento').val(formattedDate);
+                        }
+                        data.forEach(item => {
+                            itensSelecionados[item.idresgatado] = { ...item };
+                        });
+                        renderizarItensSelecionados();
+                    },
+                    error: function() { alert('Erro ao carregar os itens da compra.'); }
+                });
+            });
+
+            // ATUALIZADO: Agora detecta digitação tanto nos itens manuais quanto nos do Excel (.inp-...)
+            $('#itens-selecionados-container').on('keyup change', 
+                'input[name*="[qtditem]"], input[name*="[valoritem]"], input[name*="[valor2]"], input[name*="[valor3]"], .inp-qtd, .inp-val1, .inp-val2, .inp-val3', 
+                function() {
+                calcularEExibirTotais();
+            });
+            $('#itens-selecionados-container').on('change', '.sequencia-select', function() {
+                reordenarItensVisualmente();
+            });
+
+            const modal = $('#selecaoItensModal');
+            $('#btnAbrirModal').click(() => { modal.show(); popularListaModal(); });
+            $('#btnCloseModal').click(() => modal.hide());
+            $(window).click(event => { if (event.target == modal[0]) modal.hide(); });
+            $('#filtro-item').on('keyup', function() {
+                const termo = $(this).val().toLowerCase();
+                $('#lista-itens-modal .item-modal-row').each(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(termo) > -1);
+                });
+            });
+            $('#btnConfirmarSelecao').click(function() {
+                $('#lista-itens-modal .item-checkbox').each(function() {
+                    const itemId = $(this).val();
+                    const itemData = todosOsItens.find(i => i.id == itemId);
+                    if ($(this).is(':checked')) {
+                        if (!itensSelecionados[itemId]) itensSelecionados[itemId] = { ...itemData, idresgatado: itemData.id };
+                    } else {
+                        // Se desmarcar um item que já estava salvo, ele deve ser marcado para exclusão
+                        const itemRemovido = itensSelecionados[itemId];
+                        if (itemRemovido && itemRemovido.detalhe_id) {
+                            $('#deletados-container').append(`<input type="hidden" name="itens_a_deletar[]" value="${itemRemovido.detalhe_id}">`);
+                        }
+                        delete itensSelecionados[itemId];
+                    }
+                });
+                renderizarItensSelecionados();
+                modal.hide();
+            });
+            $('#btnCadastrarNovoItem').click(function() {
+                const data = {
+                    descricaoitem: $('#novoitem_descricao').val(),
+                    unidadeitem: $('#novoitem_unidade').val(),
+                    categoria: $('#novoitem_categoria').val()
+                };
+                if (!data.descricaoitem || !data.unidadeitem || !data.categoria) {
+                    alert('Preencha todos os campos para cadastrar um novo item.'); return;
+                }
+                $.ajax({
+                    url: '/cadastrar_novo_item_ajax', method: 'POST', contentType: 'application/json', data: JSON.stringify(data),
+                    success: function(response) {
+                        if (response.success) {
+                            todosOsItens.push(response.item);
+                            adicionarItemNaListaModal(response.item, true);
+                            alert('Item cadastrado e adicionado à seleção!');
+                            $('#novoitem_descricao, #novoitem_unidade, #novoitem_categoria').val('');
+                        }
+                    }, error: function() { alert('Ocorreu um erro ao cadastrar o item.'); }
+                });
+            });
+
+           // --- CÓDIGO DE IMPORTAÇÃO DO EXCEL ATUALIZADO ---
+            $('#btnImportarExcel').click(function() {
+                var fileInput = $('#arquivoExcel')[0];
+                if (fileInput.files.length === 0) { alert('Selecione um arquivo Excel.'); return; }
+
+                var formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                $('#loading-excel').show();
+                $('#btnImportarExcel').prop('disabled', true);
+
+                $.ajax({
+                    url: '/processar_upload_excel',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#loading-excel').hide();
+                        $('#btnImportarExcel').prop('disabled', false);
+
+                        if (response.success) {
+                            renderizarItensExcel(response.itens); // Chama a nova função
+                            $('#arquivoExcel').val('');
+                        } else {
+                            alert('Erro: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        $('#loading-excel').hide();
+                        $('#btnImportarExcel').prop('disabled', false);
+                        alert('Erro no servidor.');
+                    }
+                });
+            });
+
+            // --- FUNÇÃO CORRIGIDA PARA NUMERAÇÃO E ORDEM ---
+            function renderizarItensExcel(itensImportados) {
+                const container = $('#itens-selecionados-container');
+                
+                // 1. Descobre qual é o último número de sequência já usado na tela
+                let ultimaSequencia = 0;
+                container.find('.sequencia-select').each(function() {
+                    let val = parseInt($(this).val()) || 0;
+                    if (val > ultimaSequencia) ultimaSequencia = val;
+                });
+
+                // 2. Prepara as opções do Select de Produtos (apenas uma vez para performance)
+                let opcoesSelectProduto = '<option value="">SELECIONE O ITEM DO SISTEMA...</option>';
+                todosOsItens.forEach(i => {
+                    opcoesSelectProduto += `<option value="${i.id}">${i.descricaoitem} (${i.unidadeitem})</option>`;
+                });
+
+                // 3. Mostra o cabeçalho se estava oculto
+                container.find('.item-header').css('display', 'grid');
+
+                // 4. Itera sobre os itens do Excel
+                itensImportados.forEach((item, index) => {
+                    // Calcula a sequência real: (Último da tela) + (Ordem do Excel)
+                    // Se o Python mandou 1, e ja tem 5 na tela -> 5 + 1 = 6
+                    let sequenciaReal = ultimaSequencia + item.numero_item;
+
+                    // Gera as opções de 1 até (Total + 50) para garantir que o número exista na lista
+                    // (Fazemos isso de forma inteligente: só precisamos garantir que 'sequenciaReal' esteja nas opções)
+                    let opcoesSequencia = '';
+                    let totalNecessario = sequenciaReal + itensImportados.length + 20; 
+                    for (let i = 1; i <= totalNecessario; i++) {
+                        // Já marca como 'selected' direto no HTML se for o número certo
+                        let isSelected = (i === sequenciaReal) ? 'selected' : '';
+                        opcoesSequencia += `<option value="${i}" ${isSelected}>${i}</option>`;
+                    }
+
+                    const tempId = item.temp_id;
+                    const valor1 = formatarMoedaCarregado(item.valoritem);
+                    const valor2 = formatarMoedaCarregado(item.valor2);
+                    const valor3 = formatarMoedaCarregado(item.valor3);
+
+                    const rowHtml = `
+                    <div class="item-row item-data-row row-excel" data-tempid="${tempId}">
+                        
+                        <div>
+                            <select class="sequencia-select excel-seq">
+                                ${opcoesSequencia}
+                            </select>
+                        </div>
+
+                        <div>
+                            <span class="referencia-excel">Excel: <strong>${item.descricao_excel}</strong></span>
+                            <select class="form-control item-sistema-select">
+                                ${opcoesSelectProduto}
+                            </select>
+                            <div style="margin-top:5px; font-size:0.8em;">
+                                <a href="#" class="btn-novo-rapido" style="color:green;">+ Novo Item</a>
+                            </div>
+                        </div>
+
+                        <div><input type="text" class="inp-qtd" value="${item.qtditem}"></div>
+                        <div><input type="text" class="inp-val1" value="${valor1}" onkeyup="formatarMoeda(this);"></div>
+                        <div><input type="text" class="inp-val2" value="${valor2}" onkeyup="formatarMoeda(this);"></div>
+                        <div><input type="text" class="inp-val3" value="${valor3}" onkeyup="formatarMoeda(this);"></div>
+                        
+                        <button type="button" class="remove-item-btn" onclick="$(this).parent().remove(); calcularEExibirTotais();">X</button>
+                    </div>`;
+
+                    container.append(rowHtml);
+                });
+
+                // Inicializa o Select2
+                $('.item-sistema-select').select2({
+                    placeholder: "Busque o item...",
+                    allowClear: true
+                });
+                
+                calcularEExibirTotais();
+            }
+
+            // --- EVENTO: QUANDO O USUÁRIO SELECIONA UM ITEM NO DROPDOWN ---
+            $(document).on('change', '.item-sistema-select', function() {
+                const row = $(this).closest('.item-row');
+                const itemId = $(this).val(); // ID real do banco de dados
+
+                // Se selecionou algo válido
+                if (itemId) {
+                    row.css('background-color', '#e8f5e9'); // Fica verdinho pra indicar sucesso
+                    
+                    // Injeta os atributos NAME corretos para que o Python entenda no 'request.form'
+                    // Formato: items[ID_DO_BANCO][campo]
+                    row.find('.sequencia-select').attr('name', `items[${itemId}][numero_item]`);
+                    
+                    row.find('.inp-qtd').attr('name', `items[${itemId}][qtditem]`);
+                    // Cria o hidden para qtd se não existir
+                    if(row.find('input[name="items['+itemId+'][qtditem_oculto]"]').length === 0) {
+                         row.find('.inp-qtd').after(`<input type="hidden" name="items[${itemId}][qtditem_oculto]" value="${row.find('.inp-qtd').val()}">`);
+                    }
+
+                    row.find('.inp-val1').attr('name', `items[${itemId}][valoritem]`);
+                     if(row.find('input[name="items['+itemId+'][valoritem_oculto]"]').length === 0) {
+                        row.find('.inp-val1').after(`<input type="hidden" name="items[${itemId}][valoritem_oculto]">`);
+                        removerMascara(row.find('.inp-val1')[0]);
+                    }
+
+                    row.find('.inp-val2').attr('name', `items[${itemId}][valor2]`);
+                     if(row.find('input[name="items['+itemId+'][valor2_oculto]"]').length === 0) {
+                        row.find('.inp-val2').after(`<input type="hidden" name="items[${itemId}][valor2_oculto]">`);
+                         removerMascara(row.find('.inp-val2')[0]);
+                    }
+
+                    row.find('.inp-val3').attr('name', `items[${itemId}][valor3]`);
+                     if(row.find('input[name="items['+itemId+'][valor3_oculto]"]').length === 0) {
+                        row.find('.inp-val3').after(`<input type="hidden" name="items[${itemId}][valor3_oculto]">`);
+                         removerMascara(row.find('.inp-val3')[0]);
+                    }
+                    
+                    // Adiciona o IDRESGATADO ao array itensSelecionados (lógica antiga) para evitar duplicatas futuras
+                    itensSelecionados[itemId] = { idresgatado: itemId }; 
+
+                } else {
+                    // Se desmarcou, remove os names para não enviar lixo
+                    row.css('background-color', '#fff');
+                    row.find('input, select').removeAttr('name');
+                    row.find('input[type="hidden"]').remove();
+                }
+            });
+
+            // Botão rápido de novo item (abre o modal de cadastro existente se quiser, ou foca lá)
+            $(document).on('click', '.btn-novo-rapido', function(e) {
+                e.preventDefault();
+                $('#selecaoItensModal').show();
+                $('#novoitem_descricao').focus();
+                // Dica: O usuário cadastra lá, fecha o modal, e depois busca no select2 que já vai estar atualizado se você recarregar a página ou atualizar o array.
+                // Atualizar o array dinamicamente no select2 é avançado, recomenda-se cadastrar e depois buscar.
+            });
+        });
+
+        function popularListaModal() {
+            const listaContainer = $('#lista-itens-modal');
+            listaContainer.empty();
+            todosOsItens.forEach(item => adicionarItemNaListaModal(item, !!itensSelecionados[item.id]));
+        }
+        
+        function adicionarItemNaListaModal(item, isChecked) {
+             $('#lista-itens-modal').append(`<div class="item-modal-row"><input type="checkbox" class="item-checkbox" id="item-check-${item.id}" value="${item.id}" ${isChecked ? 'checked' : ''}><label for="item-check-${item.id}">${item.descricaoitem} (${item.unidadeitem})</label></div>`);
+        }
+
+        async function renderizarItensSelecionados() {
+            const container = $('#itens-selecionados-container');
+            container.find('.item-data-row').remove();
+            
+            const totalItens = Object.keys(itensSelecionados).length;
+            $('#contador-itens').text(`${totalItens} item(ns) na lista`);
+            if (totalItens > 0) container.find('.item-header').css('display', 'grid');
+            else container.find('.item-header').hide();
+
+            const itensOrdenados = Object.values(itensSelecionados).sort((a,b) => (a.numero_item || Infinity) - (b.numero_item || Infinity));
+
+            for (const item of itensOrdenados) {
+                const itemId = item.idresgatado;
+                let opcoesSequencia = '';
+                for (let i = 1; i <= totalItens; i++) {
+                    opcoesSequencia += `<option value="${i}">${i}</option>`;
+                }
+                
+                if (!item.detalhe_id) {
+                    const response = await $.get('/get_ultimo_preco_item', { iditem: itemId });
+                    item.valoritem = response.valoritem; item.valor2 = response.valor2; item.valor3 = response.valor3;
+                }
+                
+                const valor1 = formatarMoedaCarregado(item.valoritem); const valor2 = formatarMoedaCarregado(item.valor2);
+                const valor3 = formatarMoedaCarregado(item.valor3); const qtd = item.qtditem || '';
+                const hiddenDetalheId = item.detalhe_id ? `<input type="hidden" name="items[${itemId}][detalhe_id]" value="${item.detalhe_id}">` : '';
+
+                const itemHtml = `<div class="item-row item-data-row" id="item-row-${itemId}">
+                        ${hiddenDetalheId}
+                        <div><select name="items[${itemId}][numero_item]" class="sequencia-select">${opcoesSequencia}</select></div>
+                        <span>${item.descricaoitem}</span>
+                        <div><input type="text" name="items[${itemId}][qtditem]" value="${qtd}"><input type="hidden" name="items[${itemId}][qtditem_oculto]"></div>
+                        <div><input type="text" value="${valor1}" name="items[${itemId}][valoritem]" onkeyup="formatarMoeda(this);"><input type="hidden" name="items[${itemId}][valoritem_oculto]"></div>
+                        <div><input type="text" value="${valor2}" name="items[${itemId}][valor2]" onkeyup="formatarMoeda(this);"><input type="hidden" name="items[${itemId}][valor2_oculto]"></div>
+                        <div><input type="text" value="${valor3}" name="items[${itemId}][valor3]" onkeyup="formatarMoeda(this);"><input type="hidden" name="items[${itemId}][valor3_oculto]"></div>
+                        <button type="button" class="remove-item-btn" data-id="${itemId}">X</button>
+                    </div>`;
+                container.append(itemHtml);
+                $(`#item-row-${itemId}`).find('.sequencia-select').val(item.numero_item || 0);
+            }
+
+            $('.remove-item-btn').click(function() {
+                const idToRemove = $(this).data('id');
+                const itemRemovido = itensSelecionados[idToRemove];
+                if (itemRemovido && itemRemovido.detalhe_id) {
+                    $('#deletados-container').append(`<input type="hidden" name="itens_a_deletar[]" value="${itemRemovido.detalhe_id}">`);
+                }
+                delete itensSelecionados[idToRemove];
+                renderizarItensSelecionados();
+            });
+            reordenarItensVisualmente();
+            calcularEExibirTotais();
+        }
+
+        function reordenarItensVisualmente() {
+            const container = $('#itens-selecionados-container');
+            const rows = container.find('.item-data-row');
+            let itemsParaOrdenar = rows.map(function() { return { seq: parseInt($(this).find('.sequencia-select').val(), 10) || 0, element: this }; }).get();
+            itemsParaOrdenar.sort((a, b) => a.seq - b.seq);
+            itemsParaOrdenar.forEach(item => container.append(item.element));
+
+            const sequenciasVistas = {};
+            $('.sequencia-select').each(function() { const seq = $(this).val(); sequenciasVistas[seq] = (sequenciasVistas[seq] || 0) + 1; });
+            rows.each(function() { const seq = $(this).find('.sequencia-select').val(); $(this).toggleClass('sequencia-duplicada', sequenciasVistas[seq] > 1); });
+        }
+        
+        function calcularEExibirTotais() {
+            let total1 = 0, total2 = 0, total3 = 0;
+
+            const parseValor = (valorString) => {
+                if (!valorString) return 0;
+                let numero = valorString.replace(/[^\d,]/g, '').replace(',', '.');
+                return parseFloat(numero) || 0;
+            };
+
+            $('#itens-selecionados-container .item-data-row').each(function() {
+                const row = $(this);
+                
+                // Função auxiliar: Tenta pegar pela CLASSE (Excel), se falhar pega pelo NAME (Manual)
+                const obterValorCampo = (classeExcel, trechoNameManual) => {
+                    let input = row.find('.' + classeExcel); // Tenta classe do Excel
+                    if (input.length === 0) {
+                        // Se não achou classe, tenta o name do sistema manual
+                        input = row.find(`input[name*="${trechoNameManual}"]`);
+                    }
+                    return parseValor(input.val());
+                };
+
+                const qtd = obterValorCampo('inp-qtd', '[qtditem]');
+                const val1 = obterValorCampo('inp-val1', '[valoritem]');
+                const val2 = obterValorCampo('inp-val2', '[valor2]');
+                const val3 = obterValorCampo('inp-val3', '[valor3]');
+
+                total1 += qtd * val1;
+                total2 += qtd * val2;
+                total3 += qtd * val3;
+            });
+
+            $('#total-forn1').text(total1.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+            $('#total-forn2').text(total2.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+            $('#total-forn3').text(total3.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
+
+            if ($('#itens-selecionados-container .item-data-row').length > 0) {
+                $('#totais-container').show();
+            } else {
+                $('#totais-container').hide();
+            }
+        }
+        
+        function validarEPrepararEnvio() {
+            if ($('.sequencia-duplicada').length > 0) {
+                alert('Erro: Existem itens com o mesmo número de sequência. Por favor, ajuste os valores antes de salvar.');
+                return false;
+            }
+            prepararTodosValoresOcultos();
+            return true;
+        }
+        
+        function prepararTodosValoresOcultos() {
+            $('#itens-selecionados-container .item-data-row').each(function() {
+                removerMascara($(this).find('input[name*="[qtditem]"]')[0]);
+                removerMascara($(this).find('input[name*="[valoritem]"]')[0]);
+                removerMascara($(this).find('input[name*="[valor2]"]')[0]);
+                removerMascara($(this).find('input[name*="[valor3]"]')[0]);
+            });
+        }
+        
+        function formatarMoedaCarregado(valor) { if (valor === undefined || valor === null) return ''; return (Number(valor) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function formatarMoeda(elemento) { let valor = elemento.value.replace(/\D/g, ''); if (valor === '') { elemento.value = ''; return; } elemento.value = (parseInt(valor, 10) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function removerMascara(input) { const valor = input.value.replace(/\D/g, ''); $(input).next('input[type="hidden"]').val(valor); }
+    </script>
+</body>
+</html>

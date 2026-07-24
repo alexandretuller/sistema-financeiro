@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Entradas</title>
+  <style>
+    .home-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .filter-container {
+      margin-bottom: 20px;
+    }
+    .filter-container select {
+      padding: 10px;
+      margin-right: 10px;
+    }
+    .export-button {
+      margin-bottom: 20px;
+    }
+    /* Estilo do botão de excluir */
+    .btn-excluir {
+        background-color: #ff4d4d;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .btn-excluir:hover {
+        background-color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Entradas</h1>
+  <div class="home-button">
+    <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+  </div>
+  <div class="filter-container">
+    <label for="ano">Ano:</label>
+    <select id="ano" name="ano">
+      <option value="">Selecione o ano</option>
+    </select>
+
+    <label for="fonte">Fonte:</label>
+    <select id="fonte" name="fonte">
+      <option value="">Selecione a fonte</option>
+    </select>
+  </div>
+
+  <button class="export-button" onclick="exportTableToExcel('entradasTable', 'entradas')">Exportar para Excel</button>
+
+  <table id="entradasTable">
+    <thead>
+      <tr>
+        <th>Data de entrada</th>
+        <th>Capital/Custeio</th>
+        <th>Valor (R$)</th>
+        <th>Fonte</th>
+        <th>Sub fonte</th>
+        <th>Comentário</th>
+        <th>Ações</th> </tr>
+    </thead>
+    <tbody>
+      </tbody>
+  </table>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.6/jquery.inputmask.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <script>
+    function exportTableToExcel(tableID, filename = ''){
+      var table = document.getElementById(tableID);
+      // Ajuste para não exportar a coluna de botões (opcional)
+      var wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
+      var wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'binary'});
+
+      function s2ab(s) {
+        var buf = new ArrayBuffer(s.length);
+        var view = new Uint8Array(buf);
+        for (var i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+        return buf;
+      }
+
+      var blob = new Blob([s2ab(wbout)], {type: "application/octet-stream"});
+      var link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename ? filename + '.xlsx' : 'excel_data.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    $(document).ready(function() {
+      function carregarFiltros() {
+        $.ajax({
+          url: '/get_filtros',
+          method: 'GET',
+          success: function(data) {
+            var anos = data.anos;
+            var anoSelect = $('#ano');
+            anoSelect.empty();
+            anoSelect.append('<option value="">Selecione o ano</option>');
+            anos.forEach(function(ano) {
+              anoSelect.append('<option value="' + ano + '">' + ano + '</option>');
+            });
+
+            var fontes = data.fontes;
+            var fonteSelect = $('#fonte');
+            fonteSelect.empty();
+            fonteSelect.append('<option value="">Selecione a fonte</option>');
+            fontes.forEach(function(fonte) {
+              fonteSelect.append('<option value="' + fonte + '">' + fonte + '</option>');
+            });
+          }
+        });
+      }
+
+      function carregarEntradas() {
+        var ano = $('#ano').val();
+        var fonte = $('#fonte').val();
+        $.ajax({
+          url: '/get_entradas',
+          method: 'GET',
+          data: { ano: ano, fonte: fonte },
+          success: function(data) {
+            var entradas = data.entradas;
+            var tbody = $('#entradasTable tbody');
+            tbody.empty();
+            entradas.forEach(function(entrada) {
+              var valorFormatado = (entrada.valor / 100).toFixed(2).replace('.', ',');
+              
+              // ADICIONADO O BOTÃO NA ULTIMA COLUNA
+              var row = '<tr data-id="' + entrada.id + '">' +
+                '<td>' + entrada.data + '</td>' +
+                '<td>' + entrada.capcus + '</td>' +
+                '<td class="valor">R$ ' + valorFormatado + '</td>' +
+                '<td>' + entrada.fonte + '</td>' +
+                '<td>' + entrada.subfonte + '</td>' +
+                '<td>' + entrada.comentario + '</td>' +
+                '<td style="text-align:center;">' + 
+                    '<button class="btn-excluir" data-id="' + entrada.id + '">Excluir</button>' + 
+                '</td>' +
+                '</tr>';
+              tbody.append(row);
+            });
+
+            // Lógica do DUPLO CLIQUE (Editar)
+            $('#entradasTable tbody tr').dblclick(function() {
+              var entradaId = $(this).data('id');
+              if (entradaId) {
+                window.location.href = "/editar_entrada?entradaId=" + entradaId;
+              }
+            });
+
+            // Lógica do BOTÃO EXCLUIR
+            // Usamos .off() antes para evitar duplicidade de eventos se recarregar a tabela
+            $('.btn-excluir').off('click').on('click', function(e) {
+                // Impede que o clique no botão ative o duplo clique da linha ou outros eventos
+                e.stopPropagation(); 
+                
+                var id = $(this).data('id');
+                var linha = $(this).closest('tr');
+
+                if(confirm("Tem certeza que deseja excluir esta entrada? Esta ação não pode ser desfeita.")) {
+                    $.ajax({
+                        url: '/excluir_entrada',
+                        method: 'POST',
+                        data: { id: id },
+                        success: function(response) {
+                            if(response.success) {
+                                // Remove a linha da tabela visualmente sem precisar recarregar tudo
+                                linha.fadeOut(300, function(){ $(this).remove(); });
+                            } else {
+                                alert("Erro ao excluir: " + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert("Erro de comunicação com o servidor.");
+                        }
+                    });
+                }
+            });
+
+          }
+        });
+      }
+
+      carregarFiltros();
+
+      $('#ano, #fonte').change(function() {
+        carregarEntradas();
+      });
+    });
+  </script>
+</body>
+</html>

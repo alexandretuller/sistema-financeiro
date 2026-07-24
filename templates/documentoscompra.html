@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financeiro - Irene Garrido</title>
+  <style>
+    .grid-container {
+      display: grid;
+      grid-template-columns: auto;
+      gap: 10px;
+      justify-content: center;
+    }
+    .grid-item {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+    }
+    button {
+      background-color: #4CAF50; /* Default Green */
+      color: white;
+      padding: 12px 20px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 250px;
+      height: 50px;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button#btnGerarConsolidacao {
+      background-color: #80e5f0; /* Light Blue */
+      color: black;
+    }
+    button#btnGerarOrdem {
+      background-color: #eef885; /* Light Yellow */
+      color: black;
+    }
+    button#btnGerarAta {
+      background-color: #e48500; /* Orange */
+      color: white;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .details {
+      margin-bottom: 20px;
+    }
+    .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+  </style>
+</head>
+<body>
+  <div class="home-button">
+    <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+</div>
+  <div class="container-centralizado" style="margin: 0 auto;">
+    <h1 style="text-align: center;">Financeiro - Irene Garrido</h1>
+
+    
+
+
+
+
+    <div class="details">
+        <label for="idMandato">Selecione o Mandato:</label>
+  <select id="idMandato" name="idMandato">
+    <option value="">Selecione um mandato</option>
+    {% for mandato in mandatos %}
+      <option value="{{ mandato.ano_mandato }}">{{ mandato.ano_mandato }}</option>
+    {% endfor %}
+  </select>
+
+      <label for="idcompra">Selecione a Compra:</label>
+      <select id="idcompra" name="idcompra">
+        <option value="">Selecione uma compra</option>
+        {% for compra in compras %}
+          <option value="{{ compra.id }}">{{ compra.id }} | {{ compra.data }} | {{ compra.descricao }} | {{ compra.fornecedor1 }} | {{ compra.valor1 }}</option>
+        {% endfor %}
+      </select>
+
+      <p>Quantidade de itens lançados: <span id="qtdItens">0</span></p>
+      
+    </div>
+
+    <div class="grid-container">
+      <div class="grid-item">
+        <button id="btnGerarConsolidacao" onclick="gerarConsolidacao()">Gerar Consolidação</button>
+        <button id="btnGerarOrdem" onclick="gerarOrdem()">Gerar Ordem</button>
+        <button id="btnGerarAta" onclick="gerarAta()">Gerar Ata</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#idcompra').change(function() {
+        var idcompra = $(this).val();
+        var qtdItens = {{ itens_por_compra|tojson }};
+        $('#qtdItens').text(qtdItens[idcompra] || 0);
+      });
+    });
+
+   
+
+    function gerarConsolidacao() {
+      const idCompra = document.getElementById('idcompra').value;
+      const idMandato = document.getElementById('idMandato').value;
+      if (!idCompra) {
+        alert('Por favor, selecione uma compra antes de gerar a consolidação.');
+        return;
+      }
+      if (!idMandato) {
+    alert('Por favor, selecione um mandato antes de gerar.');
+    return;
+    }
+      window.open(`/gerar_planilha?idcompra=${idCompra}&idmandato=${idMandato}`, '_blank');
+    }
+      
+
+    function gerarOrdem() {
+      const idCompra = document.getElementById('idcompra').value;
+      const idMandato = document.getElementById('idMandato').value;
+      if (!idCompra) {
+        alert('Por favor, selecione uma compra antes de gerar a ordem.');
+        return;
+      }
+      if (!idMandato) {
+    alert('Por favor, selecione um mandato antes de gerar a ordem.');
+    return;
+  }
+  window.open(`/gerar_ordem?idcompra=${idCompra}&idmandato=${idMandato}`, '_blank');
+    }
+
+    function gerarAta() {
+      const idCompra = document.getElementById('idcompra').value;
+      const idMandato = document.getElementById('idMandato').value;
+      if (!idCompra) {
+        alert('Por favor, selecione uma compra antes de gerar a Ata e Capa.');
+        return;
+      }
+        if (!idMandato) {
+    alert('Por favor, selecione um mandato antes de gerar.');
+    return;
+      }
+      window.open(`/gerar_ata?idcompra=${idCompra}&idmandato=${idMandato}`, '_blank');
+    }
+  
+  </script>
+</body>
+</html>

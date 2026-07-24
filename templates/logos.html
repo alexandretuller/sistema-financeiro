@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão de Logos</title>
+    <style>
+          .home-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+        }
+        label {
+            margin-top: 10px;
+        }
+        img {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="home-button">
+        <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+      </div>
+    <h1>Gestão de Logos</h1>
+    <form action="{{ url_for('salvarlogo') }}" method="post" enctype="multipart/form-data">
+        <label>Logo da Escola:
+            <input type="file" name="logo_escola">
+            {% if logos and logos.logo_escola %}
+                <img src="data:image/png;base64,{{ logos.logo_escola | b64encode }}" alt="Logo da Escola" width="100">
+            {% endif %}
+        </label>
+        <label>Logo do Estado:
+            <input type="file" name="logo_estado">
+            {% if logos and logos.logo_estado %}
+                <img src="data:image/png;base64,{{ logos.logo_estado | b64encode }}" alt="Logo do Estado" width="100">
+            {% endif %}
+        </label>
+        <button type="submit">Salvar</button>
+    </form>
+    <form action="{{ url_for('deletarlogo') }}" method="post">
+        <button type="submit">Deletar Logos</button>
+    </form>
+</body>
+</html>

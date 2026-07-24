@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Informação</title>
+</head>
+<body>
+  <h1>Editar {{ field }}</h1>
+  <form method="POST">
+    <label for="new_value">{{ field }}:</label>
+    <input type="text" id="new_value" name="new_value" value="{{ getattr(escola, field) }}" required>
+    <button type="submit">Salvar</button>
+  </form>
+  <a href="{{ url_for('form') }}">Voltar</a>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FINANCEIRO - IRENE GARRIDO</title>
+  <style>
+    .grid-container {
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 10px;
+      justify-content: center;
+    }
+    .grid-item {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-centralizado" style="margin: 0 auto;">
+    <h1 style="text-align: center;">FINANCEIRO - IRENE GARRIDO</h1>
+    <div class="grid-container">
+      <div class="grid-item">
+        <button id="btnDados" class="botao dados" style="background-color: #80e5f0; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Recursos</button>
+        <button id="btnDadosEscola" class="botao dadosescola" style="background-color: #eef885; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Dados da Escola</button>
+        <button id="btnLogos" class="botao Logos" style="background-color: #ff20ff; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Logo da escola e Estado</button>
+        <button id="btnVerEntrada" class="botao dados" style="background-color: #02a107; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Ver Entradas</button>
+        <button id="btnVerSaida" class="botao Versaida" style="background-color: #ff0000; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Ver Saídas</button>
+        <button id="btnSaldo" class="botao Saldo" style="background-color: #009be9; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Saldos</button>
+      </div>
+      <div class="grid-item">
+        <button id="btnInserirEditarExcluir" class="botao botao-azul-claro" style="background-color: #ade6bc; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Inserir/Editar/Excluir Fornecedor</button>
+        <button id="btninserirItem" class="botao botao-verde-claro" style="background-color: #ced163; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Inserir Itens</button>
+        <button id="btnRelatorioItens" class="botao botao-laranja" style="background-color: #e48500; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Relatório Itens</button>
+        <button id="btnInserirEntrada" class="botao botao-roxo" style="background-color: #02a107; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Inserir Entrada</button>
+        <button id="btnInserirSaida" class="botao botao-vermelho" style="background-color: #ff0000; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Inserir Saídas</button>
+        <button id="btnDocumentosCompra" class="botao botao-cinza" style="background-color: #009be9; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Gerar Documentos Compra</button>
+        <button id="btnRelatorios" class="botao botao-preto" style="background-color: #000000; color: #ffffff; display: block; width: 250px; height: 50px;">Gerar Relatórios Anuais</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const btnInserirEditarExcluir = document.getElementById('btnInserirEditarExcluir');
+    const btninserirItem = document.getElementById('btninserirItem');
+    const btnRelatorioItens = document.getElementById('btnRelatorioItens');
+    const btnDados = document.getElementById('btnDados');
+    const btnInserirEntrada = document.getElementById('btnInserirEntrada');
+    const btnInserirSaida = document.getElementById('btnInserirSaida');
+    const btnVerEntrada = document.getElementById('btnVerEntrada');
+    const btnVerSaida = document.getElementById('btnVerSaida');
+    const btnDadosEscola = document.getElementById('btnDadosEscola');
+    const btnLogos = document.getElementById('btnLogos');
+    const btnSaldo = document.getElementById('btnSaldo');
+    const btnDocumentosCompra = document.getElementById('btnDocumentosCompra');
+    const btnRelatorios = document.getElementById('btnRelatorios');
+  
+    btnInserirEditarExcluir.addEventListener('click', function() {
+      window.location.href = "{{ url_for('escolher_inserir_editar_excluir') }}";
+    });
+    btninserirItem.addEventListener('click', function() {
+      window.location.href = "{{ url_for('inseriritem') }}";
+    });
+    btnRelatorioItens.addEventListener('click', function() {
+      window.location.href = "{{ url_for('detalhesitens') }}";
+    });
+    btnDados.addEventListener('click', function() {
+      window.location.href = "{{ url_for('fontes') }}";
+    });
+    btnInserirEntrada.addEventListener('click', function() {
+      window.location.href = "{{ url_for('inserir_entrada') }}";
+    });
+    btnInserirSaida.addEventListener('click', function() {
+      window.location.href = "{{ url_for('inserir_saida') }}";
+    });
+    btnVerEntrada.addEventListener('click', function() {
+      window.location.href = "{{ url_for('ver_entradas') }}";
+    });
+    btnVerSaida.addEventListener('click', function() {
+      window.location.href = "{{ url_for('ver_saidas') }}";
+    });
+    btnDadosEscola.addEventListener('click', function() {
+      window.location.href = "{{ url_for('dados_escola') }}";
+    });
+    btnLogos.addEventListener('click', function() {
+      window.location.href = "{{ url_for('logos') }}";
+    });
+    btnSaldo.addEventListener('click', function() {
+      window.location.href = "{{ url_for('saldos') }}";
+    });
+    btnDocumentosCompra.addEventListener('click', function() {
+      window.location.href = "{{ url_for('abrir_documentos_compra') }}";
+    });
+    btnRelatorios.addEventListener('click', function() {
+      window.location.href = "{{ url_for('abrir_documentos_relatorio') }}";
+    });
+  </script>
+</body>
+</html>

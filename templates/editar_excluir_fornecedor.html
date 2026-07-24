@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar/Excluir Fornecedor</title>
+  <style>
+   /* Estilo para os botões */
+   .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+   button[name="editar"] {
+      background-color: yellow;
+    }
+    button[name="excluir"] {
+      background-color: red;
+    }
+    /* Estilo para alinhar os elementos verticalmente */
+    form > div {
+        width: 50%; /* Adjust width as needed */
+        margin: 20px auto; /* Center the form */
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    /* Estilo para centralizar o conteúdo */
+    body {
+        text-align: center;
+    }
+    /* Estilo para aumentar o tamanho do campo do nome */
+    input[name="nomeforn"] {
+        width: 100%; /* Ajuste a largura conforme necessário */
+    }
+  </style>
+</head>
+<body>
+  <div class="home-button">
+    <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+</div>
+  <h1>Editar/Excluir Fornecedor</h1>
+
+  <form method="POST">
+    <div>
+      <label for="id">Escolha um fornecedor:</label>
+      <select id="id" name="id" onchange="updateForm(this.value)">
+        {% for fornecedor in fornecedores %}
+          <option value="{{ fornecedor.id }}">{{ fornecedor.nomeforn }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="nomeforn">Nome:</label>
+      <input type="text" id="nomeforn" name="nomeforn">
+    </div>
+
+    <div>
+      <label for="cnpjforn">CNPJ:</label>
+      <input type="text" id="cnpjforn" name="cnpjforn">
+    </div>
+
+    <div>
+      <label for="emailforn">Email:</label>
+      <input type="text" id="emailforn" name="emailforn">
+    </div>
+
+    <div>
+      <label for="telefoneforn">Telefone:</label>
+      <input type="text" id="telefoneforn" name="telefoneforn">
+    </div>
+
+    <div>
+      <label for="nomecontatoforn">Nome do Contato:</label>
+      <input type="text" id="nomecontatoforn" name="nomecontatoforn">
+    </div>
+
+    <button type="submit" name="editar">Editar</button>
+    <button type="submit" name="excluir">Excluir</button>
+  </form>
+
+  <script>
+    var fornecedores = {{ fornecedores |tojson }};
+    function updateForm(id) {
+      var fornecedor = fornecedores.find(fornecedor => fornecedor.id == id);
+      document.getElementById('nomeforn').value = fornecedor.nomeforn;
+      document.getElementById('cnpjforn').value = fornecedor.cnpjforn;
+      document.getElementById('emailforn').value = fornecedor.emailforn;
+      document.getElementById('telefoneforn').value = fornecedor.telefoneforn;
+      document.getElementById('nomecontatoforn').value = fornecedor.nomecontatoforn;
+    }
+    updateForm(document.getElementById('id').value);
+  </script>
+</body>
+</html>

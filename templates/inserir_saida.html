@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Inserir Saída</title>
+  <style>
+     .home-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    #formInserir {
+      width: 50%;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button[type="submit"] {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button[type="reset"] {
+      background-color: #ffec1c;
+      color: rgb(0, 0, 0);
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Inserir Saída</h1>
+  <div class="home-button">
+    <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+  </div>
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+  {% endwith %}
+
+  <form id="formInserir" style="margin: 0 auto;" method="POST">
+    <label for="data">Data de pagamento:</label>
+    <input type="date" id="data" name="data" required>
+
+    <label for="fornecedor1">Fornecedor 1:</label>
+    <select id="fornecedor1" name="fornecedor1">
+        <option value="">Selecione um fornecedor</option>
+      {% for fornecedor in fornecedores %}
+        <option value="{{ fornecedor }}">{{ fornecedor }}</option>
+      {% endfor %}
+    </select>
+    <label for="valor1">Valor total do Fornecedor 1:</label>
+    <input type="text" id="valor1" name="valor1" required onkeyup="formatarMoeda('valor1');" onblur="removerMascara('valor1');">
+    <input type="hidden" id="valor_oculto1" name="valor_oculto1">
+
+    <label for="fornecedor2">Fornecedor 2:</label>
+    <select id="fornecedor2" name="fornecedor2">
+        <option value="">Selecione um fornecedor</option>
+      {% for fornecedor in fornecedores %}
+        <option value="{{ fornecedor }}">{{ fornecedor }}</option>
+      {% endfor %}
+    </select>
+    <label for="valor2">Valor total do Fornecedor 2:</label>
+    <input type="text" id="valor2" name="valor2"  onkeyup="formatarMoeda('valor2');" onblur="removerMascara('valor2');">
+    <input type="hidden" id="valor_oculto2" name="valor_oculto2">
+
+    <label for="fornecedor3">Fornecedor 3:</label>
+    <select id="fornecedor3" name="fornecedor3">
+        <option value="">Selecione um fornecedor</option>
+      {% for fornecedor in fornecedores %}
+        <option value="{{ fornecedor }}">{{ fornecedor }}</option>
+      {% endfor %}
+    </select>
+    <label for="valor3">Valor total do Fornecedor 3:</label>
+    <input type="text" id="valor3" name="valor3"  onkeyup="formatarMoeda('valor3');" onblur="removerMascara('valor3');">
+    <input type="hidden" id="valor_oculto3" name="valor_oculto3">
+
+    <label for="capcus">Capital/Custeio:</label>
+    <select id="capcus" name="capcus">
+        <option value="">Escolha um tipo</option>
+      <option value="CAPITAL">CAPITAL</option>
+      <option value="CUSTEIO">CUSTEIO</option>
+    </select>
+
+    <label for="fonte">Fonte:</label>
+    <select id="fonte" name="fonte">
+        <option value="">Escolhe uma fonte</option>
+      {% for fonte in fontes %}
+        <option value="{{ fonte }}">{{ fonte }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="subfonte">Subfonte:</label>
+    <select id="subfonte" name="subfonte">
+        <option value="">Escolha uma subfonte</option>
+    </select>
+
+    <label for="descricao">Descrição da compra:</label>
+    <input type="text" id="descricao" name="descricao">
+
+    <label for="tiponota">Tipo de nota:</label>
+    <select id="tiponota" name="tiponota">
+        <option value="">Escolha o tipo</option>
+      <option value="NF-e">NF-e</option>
+      <option value="NFS-e">NFS-e</option>
+      <option value="NFC-e">NFC-e</option>
+      <option value="NFAe">NFAe</option>
+      <option value="NFCom">NFCom</option>
+    </select>
+
+    <label for="numnota">Número da nota fiscal:</label>
+    <input type="text" id="numnota" name="numnota">
+
+    <label for="datanota">Data da nota:</label>
+    <input type="date" id="datanota" name="datanota">
+
+    <label for="numpag">Insira o número do pagamento (PIX/CHEQUE ou Nº CARTÃO):</label>
+    <input type="text" id="numpag" name="numpag">
+
+    <button type="submit">Salvar</button>
+    <button type="reset">Limpar</button>
+    <button id="btnInseriritens" class="botao botao-verde-claro" style="background-color: #ced163; color: #000000">Inserir itens</button>
+  </form>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    const btnInseriritens = document.getElementById('btnInseriritens');
+    btnInseriritens.addEventListener('click', function() {
+      window.location.href = "{{ url_for('inserir_item_compra') }}";
+    });
+
+    $('#fonte').change(function() {
+      $.ajax({
+        url: '/get_subfontes',
+        data: {'fonte': $('#fonte').val()},
+        type: 'POST',
+        success: function(response) {
+          $('#subfonte').empty();
+          $.each(response, function(key, value) {
+            $('#subfonte').append('<option value="'+value+'">'+value+'</option>');
+          });
+        },
+        error: function(error) {
+          console.log(error);
+        }
+      });
+    });
+
+    $('#fornecedor1, #fornecedor2, #fornecedor3').change(function() {
+      var fornecedorId = $(this).attr('id');
+      var cnpjId = fornecedorId.replace('fornecedor', 'cnpj');
+      $.ajax({
+        url: '/get_cnpj',
+        data: {'fornecedor': $(this).val()},
+        type: 'POST',
+        success: function(response) {
+          $('#' + cnpjId).val(response);
+        },
+        error: function(error) {
+          console.log(error);
+        }
+      });
+    });
+
+    function formatarMoeda(id) {
+      var elemento = document.getElementById(id);
+      var valor = elemento.value;
+
+      valor = valor + '';
+      valor = parseInt(valor.replace(/[\D]+/g, ''));
+      valor = valor + '';
+      valor = valor.replace(/([0-9]{2})$/g, ",$1");
+
+      if (valor.length > 6) {
+        valor = valor.replace(/([0-9]{3}),([0-9]{2}$)/g, ".$1,$2");
+      }
+
+      elemento.value = 'R$ ' + valor;
+    }
+
+    function removerMascara(id) {
+      var elemento = document.getElementById(id);
+      var valor = elemento.value;
+      valor = valor.replace(/[^\d]+/g, '');
+      document.getElementById('valor_oculto' + id.charAt(id.length - 1)).value = valor;
+    }
+  </script>
+</body>
+</html>

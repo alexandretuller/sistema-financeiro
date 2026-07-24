@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Inserir Entrada</title>
+  <style>
+    .home-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    #formInserir {
+      width: 50%;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="date"],
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button[type="submit"] {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+    <div class="home-button">
+        <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+      </div>
+  <h1>{% if entrada %}Editar{% else %}Inserir{% endif %} Entrada</h1>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul class=flashes>
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  <form id="formInserir" style="margin: 0 auto;" method="POST" onsubmit="removerMascara();">
+    <label for="data">Data:</label>
+    <input type="date" id="data" name="data" value="{{ entrada.data if entrada else '' }}" required>
+
+    <label for="capcus">Capital/Custeio:</label>
+    <select id="capcus" name="capcus">
+      <option value="CAPITAL" {% if entrada and entrada.capcus == 'CAPITAL' %}selected{% endif %}>CAPITAL</option>
+      <option value="CUSTEIO" {% if entrada and entrada.capcus == 'CUSTEIO' %}selected{% endif %}>CUSTEIO</option>
+    </select>
+
+    <label for="valor">Valor:</label>
+    <input type="text" id="valor" name="valor" value="{{ entrada.valor if entrada else '' }}" required onkeyup="formatarMoeda();" onblur="removerMascara();">
+    <input type="hidden" id="valor_oculto" name="valor_oculto">
+
+    <label for="fonte">Fonte:</label>
+    <select id="fonte" name="fonte">
+        <option value="">Selecione uma Fonte</option>
+        {% for fonte in fontes %}
+          <option value="{{ fonte }}" {% if entrada and entrada.fonte == fonte %}selected{% endif %}>{{ fonte }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="subfonte">Subfonte:</label>
+    <select id="subfonte" name="subfonte">
+        <option value="">Selecione uma SubFonte</option>
+        {% if entrada %}
+          <option value="{{ entrada.subfonte }}" selected>{{ entrada.subfonte }}</option>
+        {% endif %}
+    </select>
+
+    <label for="comentario">Comentário:</label>
+    <input type="text" id="comentario" name="comentario" value="{{ entrada.comentario if entrada else '' }}">
+
+    <label for="rendimentos">RENDIMENTOS:</label>
+    <input type="checkbox" id="rendimentos" name="rendimentos" {% if entrada and entrada.comentario == 'RENDIMENTOS' %}checked{% endif %}>
+
+    <label for="recursos_proprios">RECURSOS PRÓPRIOS:</label>
+    <input type="checkbox" id="recursos_proprios" name="recursos_proprios" {% if entrada and entrada.comentario == 'RECURSOS PRÓPRIOS' %}checked{% endif %}>
+
+    <div>
+        <button type="submit">Salvar</button>
+    </div>
+  </form>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#fonte').change(function() {
+        $.ajax({
+          url: '/get_subfontes',
+          data: {'fonte': $('#fonte').val()},
+          type: 'POST',
+          success: function(response) {
+            $('#subfonte').empty();
+            $.each(response, function(key, value) {
+              $('#subfonte').append('<option value="'+value+'">'+value+'</option>');
+            });
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
+      });
+
+      $('#rendimentos').change(function() {
+        if(this.checked) {
+          $('#recursos_proprios').prop('checked', false);
+          $('#comentario').val('RENDIMENTOS');
+          $('#comentario').prop('readonly', true);
+        } else {
+          $('#comentario').val('');
+          $('#comentario').prop('readonly', false);
+        }
+      });
+
+      $('#recursos_proprios').change(function() {
+        if(this.checked) {
+          $('#rendimentos').prop('checked', false);
+          $('#comentario').val('RECURSOS PRÓPRIOS');
+          $('#comentario').prop('readonly', true);
+        } else {
+          $('#comentario').val('');
+          $('#comentario').prop('readonly', false);
+        }
+      });
+    });
+
+    function formatarMoeda() {
+        var elemento = document.getElementById('valor');
+        var valor = elemento.value;
+
+        valor = valor + '';
+        valor = parseInt(valor.replace(/[\D]+/g, ''));
+        valor = valor + '';
+        valor = valor.replace(/([0-9]{2})$/g, ",$1");
+
+        if (valor.length > 6) {
+            valor = valor.replace(/([0-9]{3}),([0-9]{2}$)/g, ".$1,$2");
+        }
+
+        elemento.value = 'R$ ' + valor;
+    }
+
+    function removerMascara() {
+        var elemento = document.getElementById('valor');
+        var valor = elemento.value;
+        valor = valor.replace(/[^\d]+/g, '');
+        document.getElementById('valor_oculto').value = valor;
+    }
+  </script>
+</body>
+</html>

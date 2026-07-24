@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Saldo de Entradas e Saídas</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+        th, td {
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .tables-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px; /* Espaçamento entre as tabelas */
+        }
+    </style>
+    <script>
+        function formatCurrency(value) {
+            // Formata um número (em centavos) para o padrão de moeda BRL (R$ 0,00)
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value / 100);
+        }
+
+        async function atualizarTabela() {
+            const ano = document.getElementById('ano').value;
+            const fonte = document.getElementById('fonte').value;
+            const apenasAno = document.getElementById('apenas_ano').checked;
+            const semestre = document.getElementById('semestre').value;
+
+            if (!fonte) {
+                // Apenas limpar as tabelas se a fonte não for selecionada
+                document.getElementById('tabela_principal_container').innerHTML = '';
+                document.getElementById('tabela_custeio_container').innerHTML = '';
+                return;
+            }
+
+            const response = await fetch('/saldo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ano, fonte, apenas_ano: apenasAno, semestre })
+            });
+
+            const resultado = await response.json();
+
+            const tabelaPrincipalContainer = document.getElementById('tabela_principal_container');
+            const tabelaCusteioContainer = document.getElementById('tabela_custeio_container');
+            
+            tabelaPrincipalContainer.innerHTML = '';
+            tabelaCusteioContainer.innerHTML = '';
+
+            // --- GERA TABELA PRINCIPAL ---
+            const mainTable = document.createElement('table');
+            
+            let headerRow = mainTable.insertRow();
+            headerRow.innerHTML = `<th>Fonte/Subfonte</th><th>Entradas (R$)</th><th>Saídas (R$)</th><th>Saldo (R$)</th>`;
+
+            if (resultado.fonte) {
+                let row = mainTable.insertRow();
+                row.innerHTML = `<td><b>${resultado.fonte} Total</b></td><td><b>${formatCurrency(resultado.total_entradas)}</b></td><td><b>${formatCurrency(resultado.total_saidas)}</b></td><td><b>${formatCurrency(resultado.saldo)}</b></td>`;
+            }
+
+            // Ordena as subfontes alfabeticamente, colocando 'GERAL CAPITAL' por último
+            const sortedSubfontes = Object.entries(resultado.subfontes).sort((a, b) => {
+                if (a[0] === 'GERAL CAPITAL') return 1;
+                if (b[0] === 'GERAL CAPITAL') return -1;
+                return a[0].localeCompare(b[0]);
+            });
+
+            for (const [subfonte, valores] of sortedSubfontes) {
+                let row = mainTable.insertRow();
+                row.innerHTML = `<td>${subfonte}</td><td>${formatCurrency(valores.entradas)}</td><td>${formatCurrency(valores.saidas)}</td><td>${formatCurrency(valores.saldo)}</td>`;
+            }
+            tabelaPrincipalContainer.appendChild(mainTable);
+
+            // --- GERA TABELA CUSTEIO CONSOLIDADO ---
+            if (resultado.custeio_consolidado) {
+                const custeioTable = document.createElement('table');
+                
+                let header = custeioTable.createTHead().insertRow();
+                header.innerHTML = `<th colspan="4" style="text-align: center;">Custeio Consolidado</th>`;
+
+                let headerCols = custeioTable.insertRow();
+                headerCols.innerHTML = `<th>Descrição</th><th>Entradas (R$)</th><th>Saídas (R$)</th><th>Saldo (R$)</th>`;
+
+                let custeioData = resultado.custeio_consolidado;
+                let custeioRow = custeioTable.insertRow();
+                custeioRow.innerHTML = `
+                    <td>Soma (Exceto GERAL CAPITAL)</td>
+                    <td>${formatCurrency(custeioData.entradas)}</td>
+                    <td>${formatCurrency(custeioData.saidas)}</td>
+                    <td>${formatCurrency(custeioData.saldo)}</td>`;
+                
+                tabelaCusteioContainer.appendChild(custeioTable);
+            }
+        }
+
+        function habilitarCheckbox() {
+            const anoSelecionado = document.getElementById('ano').value;
+            document.getElementById('apenas_ano').disabled = !anoSelecionado;
+        }
+    </script>
+</head>
+<body>
+    <div class="home-button">
+        <a href="/"><img src="https://placehold.co/60x60/f0f0f0/333?text=Home" alt="Home"></a>
+    </div>
+    <h1>Saldo de Entradas e Saídas</h1>
+
+    <div class="controls">
+        <label for="ano">Ano:</label>
+        <select id="ano" onchange="habilitarCheckbox(); atualizarTabela()">
+            <option value="">Consolidado</option>
+            {% for ano in anos %}
+            <option value="{{ ano }}">{{ ano }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="fonte">Fonte:</label>
+        <select id="fonte" onchange="atualizarTabela()">
+            <option value="">Selecione a Fonte</option>
+            {% for fonte in fontes %}
+            <option value="{{ fonte }}">{{ fonte }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="semestre">Período:</label>
+        <select id="semestre" onchange="atualizarTabela()">
+            <option value="ano_todo">Ano Todo</option>
+            <option value="primeiro">1º Semestre</option>
+            <option value="segundo">2º Semestre</option>
+        </select>
+
+        <label for="apenas_ano">Apenas Saldo do Ano:</label>
+        <input type="checkbox" id="apenas_ano" disabled onchange="atualizarTabela()">
+    </div>
+
+    <div class="tables-container">
+        <div id="tabela_principal_container">
+            <!-- Tabela principal será preenchida aqui -->
+        </div>
+        <div id="tabela_custeio_container">
+            <!-- Tabela de custeio será preenchida aqui -->
+        </div>
+    </div>
+</body>
+</html>
+
+

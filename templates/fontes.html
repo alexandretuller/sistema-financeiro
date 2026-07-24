@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Fontes e Subfontes</title>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    .flash-message {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #f0f0f0;
+      padding: 15px;
+      border: 1px solid #ccc;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    .flash-message button {
+      margin-left: 10px;
+    }
+  </style>
+  <script>
+    function closeFlashMessage() {
+      var flashMessage = document.getElementById('flash-message');
+      if (flashMessage) {
+        flashMessage.style.display = 'none';
+      }
+    }
+  </script>
+</head>
+<body>
+    <div class="home-button">
+        <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+    </div>
+  <h1>Fontes e Subfontes</h1>
+
+  <!-- Flash Message -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div id="flash-message" class="flash-message">
+        {% for category, message in messages %}
+          <span>{{ message }}</span>
+        {% endfor %}
+        <button onclick="closeFlashMessage()">OK</button>
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Formulário para adicionar nova fonte e subfonte -->
+  <form method="POST">
+    <label for="fonte">Fonte:</label>
+    <input type="text" id="fonte" name="fonte" required>
+    <label for="subfonte">Subfonte:</label>
+    <input type="text" id="subfonte" name="subfonte" required>
+    <button type="submit" name="add">Adicionar</button>
+  </form>
+
+  <table>
+    <tr>
+      {% for fonte in fontes.keys() %}
+        <th>{{ fonte }}</th>
+      {% endfor %}
+    </tr>
+    {% for i in range(max_len) %}
+      <tr>
+        {% for subfontes in fontes.values() %}
+          <td>
+            {% if i < len(subfontes) %}
+              <form method="POST">
+                <input type="hidden" name="id" value="{{ subfontes[i].id }}">
+                <input type="hidden" name="fonte" value="{{ subfontes[i].fonte }}">
+                <input type="text" name="subfonte" value="{{ subfontes[i].subfonte }}" required>
+                <button type="submit" name="editar">Editar</button>
+                <button type="submit" name="excluir">Excluir</button>
+              </form>
+            {% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>

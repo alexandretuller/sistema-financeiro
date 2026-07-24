@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Escolha de Mandato</title>
+    <style>
+          .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+        }
+        th, td {
+            text-align: left;
+        }
+    </style>
+    <script>
+        
+        const camposBonitos = {
+            'nome_escola': 'Nome da Escola',
+            'endereco': 'Endereço',
+            'cidade': 'Cidade',
+            'presidente_conselho': 'Presidente do Conselho',
+            'secretario_conselho': 'Secretário(a) do Conselho',
+            'local_reuniao': 'Local de Reunião',
+            'cnpj_conselho': 'CNPJ do Conselho',
+            'inep_escola': 'INEP da Escola',
+            'nome_1_conselheiro': 'Nome do 1º Conselheiro Fiscal',
+            'endereco_1_conselheiro': 'Endereço do 1º Cons. Fiscal',
+            'cpf_1_conselheiro': 'CPF do 1º Cons. Fiscal',
+            'nome_2_conselheiro': 'Nome do 2º Conselheiro Fiscal',
+            'endereco_2_conselheiro': 'Endereço do 2º Cons. Fiscal',
+            'cpf_2_conselheiro': 'CPF do 2º Cons. Fiscal',
+            'nome_3_conselheiro': 'Nome do 3º Conselheiro Fiscal',
+            'endereco_3_conselheiro': 'Endereço do 3º Cons. Fiscal',
+            'cpf_3_conselheiro': 'CPF do 3º Cons. Fiscal',
+            'nome_4_conselheiro': 'Nome do 4º Conselheiro Fiscal',
+            'endereco_4_conselheiro': 'Endereço do 4º Cons. Fiscal',
+            'cpf_4_conselheiro': 'CPF do 4º Cons. Fiscal',
+            'ano_mandato': 'Ano do Mandato'
+        };
+
+        async function carregarDados() {
+            const anoMandato = document.getElementById('ano_mandato').value;
+            // **NOVO**: Guarda o ano selecionado no campo oculto
+            document.getElementById('original_ano_mandato').value = anoMandato;
+            
+            const table = document.getElementById('dados_tabela');
+            table.innerHTML = '';
+
+            const campos = [
+                'nome_escola', 'endereco', 'cidade', 'presidente_conselho', 'secretario_conselho',
+                'local_reuniao', 'cnpj_conselho', 'inep_escola', 'nome_1_conselheiro',
+                'endereco_1_conselheiro', 'cpf_1_conselheiro', 'nome_2_conselheiro',
+                'endereco_2_conselheiro', 'cpf_2_conselheiro', 'nome_3_conselheiro',
+                'endereco_3_conselheiro', 'cpf_3_conselheiro', 'nome_4_conselheiro',
+                'endereco_4_conselheiro', 'cpf_4_conselheiro', 'ano_mandato'
+            ];
+
+            if (anoMandato === "novo_mandato") {
+                campos.forEach(campo => {
+                    const row = document.createElement('tr');
+                    const cell1 = document.createElement('td');
+                    const cell2 = document.createElement('td');
+                    cell1.textContent = camposBonitos[campo];
+                    cell2.innerHTML = `<input type="text" id="${campo}" value="">`;
+                    row.appendChild(cell1);
+                    row.appendChild(cell2);
+                    table.appendChild(row);
+                });
+            } else {
+                const response = await fetch(`/dados/${anoMandato}`);
+                const dados = await response.json();
+                campos.forEach(campo => {
+                    const row = document.createElement('tr');
+                    const cell1 = document.createElement('td');
+                    const cell2 = document.createElement('td');
+                    cell1.textContent = camposBonitos[campo];
+                    cell2.innerHTML = `<input type="text" id="${campo}" value="${dados[campo] || ''}">`;
+                    row.appendChild(cell1);
+                    row.appendChild(cell2);
+                    table.appendChild(row);
+                });
+            }
+        }
+
+        async function salvar() {
+            const inputs = document.querySelectorAll('input[type="text"]');
+            const data = {};
+            inputs.forEach(input => {
+                data[input.id] = input.value;
+            });
+            // **NOVO**: Adiciona o ano original ao corpo da requisição
+            data['original_ano_mandato'] = document.getElementById('original_ano_mandato').value;
+
+            const response = await fetch('/salvar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            alert(result.message); // Mostra a mensagem de sucesso ou erro do backend
+
+            if (result.success) {
+                // Atualiza a página para refletir as mudanças (ex: novo ano na lista)
+                window.location.reload(); 
+            }
+        }
+
+        window.onload = function() {
+            document.getElementById('ano_mandato').addEventListener('change', carregarDados);
+            carregarDados();
+        }
+    </script>
+</head>
+<body>
+    <div class="home-button">
+        <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+    </div>
+
+    <input type="hidden" id="original_ano_mandato" value="novo_mandato">
+
+    <h1>Escolha o Ano do Mandato</h1>
+    <select id="ano_mandato">
+        <option value="novo_mandato">Novo Mandato</option>
+        {% for ano in anos_mandato %}
+        <option value="{{ ano }}">{{ ano }}</option>
+        {% endfor %}
+    </select>
+    <table id="dados_tabela">
+        </table>
+    <button onclick="salvar()">Salvar</button>
+</body>
+</html>

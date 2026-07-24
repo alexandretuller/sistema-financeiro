@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inserir Fornecedor</title>
+  <style>
+    .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+  /* General form styling */
+#formInserir {
+  width: 50%; /* Adjust width as needed */
+  margin: 20px auto; /* Center the form */
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Labels */
+label {
+  display: block; /* Make labels appear on their own line */
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+/* Inputs and selects */
+input[type="text"],
+input[type="number"],
+select {
+  width: 100%; /* Make inputs and selects span the full width */
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Submit button */
+button[type="submit"] {
+  background-color: #4CAF50; /* Green */
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+</style> </head>
+<body>
+  <div class="home-button">
+    <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+</div>
+  <h1 style="text-align: center;">Inserir Fornecedor</h1>
+
+
+
+  <form id="formInserir" style="margin: 0 auto;">
+    <label for="nomeforn">Nome:</label>
+    <input type="text" id="nomeforn" name="nomeforn" required>
+
+    <label for="cnpjforn">CNPJ:</label>
+    <input type="text" id="cnpjforn" name="cnpjforn" required>
+
+    <label for="emailforn">Email:</label>
+    <input type="text" id="emailforn" name="emailforn" >
+
+    <label for="telefoneforn">Telefone:</label>
+    <input type="text" id="telefoneforn" name="telefoneforn" >
+
+    <label for="nomecontatoforn">Nome do Contato:</label>
+    <input type="text" id="nomecontatoforn" name="nomecontatoforn" >
+
+    <button type="submit">Inserir</button>
+  </form>
+
+  <form id="uploadForm" action="/inserir_fornecedores_excel" method="POST" enctype="multipart/form-data">
+    <label>INSERIR FORNECEDORES VIA ARQUIVO DE EXCEL</label>
+    <label for="file">Escolha o arquivo Excel:</label>
+    <input type="file" id="file" name="file" accept=".xlsx">
+    <button type="submit">Inserir Fornecedores via Excel</button>
+   <div> <label>O arquivo de excel deve ter uma coluna escrito "nome", "cnpj", "email", "telefone" e "nomecontato" e deve estar em formato .xlsx. Baixe o arquivo de exemplo abaixo!</label>
+    <a href="../static/fornecedor.xlsx" download>Baixar arquivo de exemplo</a> </div>
+  </form>
+
+  <script>
+    document.getElementById('formInserir').addEventListener('submit', function(event) {
+      console.log('Botão pressionado'); 
+      event.preventDefault(); // Prevent default form submission
+
+      const nomeforn = document.getElementById('nomeforn').value;
+      const cnpjforn = document.getElementById('cnpjforn').value;
+      const emailforn = document.getElementById('emailforn').value;
+      const telefoneforn = document.getElementById('telefoneforn').value;
+      const nomecontatoforn = document.getElementById('nomecontatoforn').value;
+
+      // Create form data
+      const formData = new URLSearchParams();
+      formData.append('nomeforn', nomeforn);
+      formData.append('cnpjforn', cnpjforn);
+      formData.append('emailforn', emailforn);
+      formData.append('telefoneforn', telefoneforn);
+      formData.append('nomecontatoforn', nomecontatoforn);
+
+      fetch('/inserirfornecedor', {
+        method: 'POST',
+        body: formData,
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);  // Exibe a mensagem de sucesso
+        } else {
+          // Exibe a mensagem de erro na página
+          const errorMessage = document.createElement('p');
+          errorMessage.textContent = data.message;
+          errorMessage.style.color = 'red';
+          document.body.appendChild(errorMessage);
+        }
+      })
+      .catch(error => console.error(error));
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Incluir Item</title>
+  <style>
+   /* Estilo para os botões */
+   .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+   button[name="editar"] {
+      background-color: yellow;
+    }
+    button[name="excluir"] {
+      background-color: red;
+    }
+    /* Estilo para alinhar os elementos verticalmente */
+    form > div {
+        width: 50%; /* Adjust width as needed */
+        margin: 20px auto; /* Center the form */
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    /* Estilo para centralizar o conteúdo */
+    body {
+        text-align: center;
+    }
+    /* Estilo para aumentar o tamanho do campo do nome */
+    input[name="nomeforn"] {
+        width: 100%; /* Ajuste a largura conforme necessário */
+    }
+  </style>
+</head>
+<body>
+  <div class="home-button">
+    <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+</div>
+  <h1>Incluir Item</h1>
+
+<form method="POST">
+    
+    <div>
+        <label for="categoria">Categoria do item:</label>
+        <select id="categoria" name="categoria" onchange="checkForNewCategory(this.value)">
+            <option value="">Selecione uma opção</option>
+          <option value="new">Nova Categoria</option>
+          {% for categoria in categorias %}
+            <option value="{{ categoria }}">{{ categoria }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" id="newCategoria" name="newCategoria" style="display: none;">
+      </div>
+      
+
+  
+
+  <div>
+    <label for="descricaoitem_unidade">Descrição do Item:</label>
+    <select id="descricaoitem_unidade" name="descricaoitem" onchange="checkForNewItem(this.value)">
+        <option value="">Verifique se já tem o item</option>
+      <option value="new">Novo Item</option>
+      {% for descricaoitem, unidade in descricaoitems_unidades %}
+        <option value="{{ descricaoitem }}">{{ descricaoitem }} - {{ unidade }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" id="newDescricaoitem" name="newDescricaoitem" style="display: none;">
+  </div>
+  
+
+  <div>
+    <label for="unidadeitem">Unidade do Item:</label>
+    <input type="text" id="unidadeitem" name="unidadeitem">
+  </div>
+
+  <button type="submit">Salvar</button>
+</form>
+
+<script>
+  function checkForNewCategory(value) {
+  var categoriaSelect = document.getElementById('categoria');
+  var newCategoriaInput = document.getElementById('newCategoria');
+  if (value === 'new') {
+    newCategoriaInput.style.display = 'block';
+    categoriaSelect.name = '';
+    newCategoriaInput.name = 'categoria';
+  } else {
+    newCategoriaInput.style.display = 'none';
+    categoriaSelect.name = 'categoria';
+    newCategoriaInput.name = '';
+  }
+}
+
+
+  function checkForNewItem(value) {
+  var descricaoitemSelect = document.getElementById('descricaoitem_unidade');
+  var newDescricaoitemInput = document.getElementById('newDescricaoitem');
+  if (value === 'new') {
+    newDescricaoitemInput.style.display = 'block';
+    descricaoitemSelect.name = '';
+    newDescricaoitemInput.name = 'descricaoitem';
+  } else {
+    newDescricaoitemInput.style.display = 'none';
+    descricaoitemSelect.name = 'descricaoitem';
+    newDescricaoitemInput.name = '';
+  }
+}
+
+
+</script>
+
+</body>
+</html>

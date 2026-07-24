@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciamento de Fornecedores</title>
+  <style>
+    .home-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+  </style>
+</head>
+<body>
+  <div class="home-button">
+    <a href="/"><img src="../static/casinha.png" alt="Home" width="60" height="60"></a>
+</div>
+  <div class="container-centralizado" style="margin: 0 auto;">
+    <h1 style="text-align: center;">Gerenciamento de Fornecedores</h1>
+    <div class="container-botoes" style="display:grid; justify-content: center; align-items: center;">
+    <button id="btnInserir" class="botao botao-azul-claro" style="background-color: #098400; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Inserir Fornecedor</button>
+    <button id="btnEditar" class="botao botao-verde-claro" style="background-color: #fdec00; color: #000000; display: block; margin-bottom: 15px; width: 250px; height: 50px;">Editar/Excluir Fornecedor</button>
+   
+  </div>
+  
+  
+  <script>
+    const btnInserir = document.getElementById('btnInserir');
+    const btnEditar = document.getElementById('btnEditar');
+  
+    btnInserir.addEventListener('click', function() {
+      window.location.href = "{{ url_for('inserirfornecedor') }}";
+    });
+
+    btnEditar.addEventListener('click', function() {
+      window.location.href = "{{ url_for('editarfornecedor') }}";
+    });
+
+
+  </script>
+  
+
+
+</body>
+</html>
+
+
