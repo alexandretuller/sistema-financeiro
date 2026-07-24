@@ -42,20 +42,13 @@ from sqlalchemy import cast, Date
 from collections import defaultdict
 from sqlalchemy.sql import func, cast
 from sqlalchemy.types import Date
-
-
 import base64
-
-
 
 app = Flask(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.getcwd(), 'test.db')
 # Adicione a URL do Supabase (Atenção: tem que começar com 'postgresql://')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.nyuguhhlwcpuqvejhhvr:3848348349%40Irene@aws-0-ca-central-1.pooler.supabase.com:5432/postgres'
-app.config['SECRET_KEY'] = 'Forceline@1'  # Adicione esta linha
 db = SQLAlchemy(app)
-
-
 
 @app.template_filter('b64encode')
 def b64encode_filter(data):
