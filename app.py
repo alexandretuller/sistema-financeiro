@@ -54,7 +54,13 @@ db = SQLAlchemy(app)
 def b64encode_filter(data):
     return base64.b64encode(data).decode('utf-8')
 
-locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')  # Configurar o locale para português
+try:
+    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')  # Tenta padrão Linux
+except locale.Error:
+    try:
+        locale.setlocale(locale.LC_TIME, 'pt_BR')  # Tenta padrão Windows
+    except locale.Error:
+        pass  # Se o servidor não tiver português, ignora e não trava
 
 #BD FORNECEDORES
 class Fornecedor(db.Model):
