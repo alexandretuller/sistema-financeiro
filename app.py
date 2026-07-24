@@ -1126,83 +1126,81 @@ def get_dados(ano_mandato):
         }
     return jsonify(dados)
 
-#SALVA OU ATUALIZA OS DADOS COM A NOVA LÓGICA
+# SALVA OU ATUALIZA OS DADOS COM A NOVA LÓGICA
 @app.route('/salvar', methods=['POST'])
 def salvar():
     data = request.json
     original_ano_mandato = data.get('original_ano_mandato') # Ano original, antes de qualquer edição
-    mandato_atual_ano = data.get('ano_mandato') # Ano que está no formulário, pode ter sido alterado
+    mandato_atual_ano = data.get('ano_mandato') # Ano que está no formulário
 
-    # Verifica se o ano do mandato atual foi preenchido
     if not mandato_atual_ano:
         return jsonify({'success': False, 'message': 'O campo "Ano do Mandato" é obrigatório.'}), 400
 
-    # Cenário 1: ATUALIZAR um mandato existente.
-    # Isso só acontece se o ano do mandato não foi alterado.
-    if original_ano_mandato == mandato_atual_ano and original_ano_mandato != 'novo_mandato':
-        escola = Escola.query.filter_by(ano_mandato=original_ano_mandato).first()
-        if escola:
-            # Atualiza todos os campos
-            escola.nome_escola = data['nome_escola']
-            escola.endereco = data['endereco']
-            escola.cidade = data['cidade']
-            escola.presidente_conselho = data['presidente_conselho']
-            escola.secretario_conselho = data['secretario_conselho']
-            escola.local_reuniao = data['local_reuniao']
-            escola.cnpj_conselho = data['cnpj_conselho']
-            escola.inep_escola = data['inep_escola']
-            escola.nome_1_conselheiro = data['nome_1_conselheiro']
-            escola.endereco_1_conselheiro = data['endereco_1_conselheiro']
-            escola.cpf_1_conselheiro = data['cpf_1_conselheiro']
-            escola.nome_2_conselheiro = data['nome_2_conselheiro']
-            escola.endereco_2_conselheiro = data['endereco_2_conselheiro']
-            escola.cpf_2_conselheiro = data['cpf_2_conselheiro']
-            escola.nome_3_conselheiro = data['nome_3_conselheiro']
-            escola.endereco_3_conselheiro = data['endereco_3_conselheiro']
-            escola.cpf_3_conselheiro = data['cpf_3_conselheiro']
-            escola.nome_4_conselheiro = data['nome_4_conselheiro']
-            escola.endereco_4_conselheiro = data['endereco_4_conselheiro']
-            escola.cpf_4_conselheiro = data['cpf_4_conselheiro']
-            # O ano do mandato não precisa ser atualizado, pois é o mesmo
-            
+    try:
+        # Cenário 1: ATUALIZAR um mandato existente.
+        if original_ano_mandato == mandato_atual_ano and original_ano_mandato != 'novo_mandato':
+            escola = Escola.query.filter_by(ano_mandato=original_ano_mandato).first()
+            if escola:
+                escola.nome_escola = data['nome_escola']
+                escola.endereco = data['endereco']
+                escola.cidade = data['cidade']
+                escola.presidente_conselho = data['presidente_conselho']
+                escola.secretario_conselho = data['secretario_conselho']
+                escola.local_reuniao = data['local_reuniao']
+                escola.cnpj_conselho = data['cnpj_conselho']
+                escola.inep_escola = data['inep_escola']
+                escola.nome_1_conselheiro = data['nome_1_conselheiro']
+                escola.endereco_1_conselheiro = data['endereco_1_conselheiro']
+                escola.cpf_1_conselheiro = data['cpf_1_conselheiro']
+                escola.nome_2_conselheiro = data['nome_2_conselheiro']
+                escola.endereco_2_conselheiro = data['endereco_2_conselheiro']
+                escola.cpf_2_conselheiro = data['cpf_2_conselheiro']
+                escola.nome_3_conselheiro = data['nome_3_conselheiro']
+                escola.endereco_3_conselheiro = data['endereco_3_conselheiro']
+                escola.cpf_3_conselheiro = data['cpf_3_conselheiro']
+                escola.nome_4_conselheiro = data['nome_4_conselheiro']
+                escola.endereco_4_conselheiro = data['endereco_4_conselheiro']
+                escola.cpf_4_conselheiro = data['cpf_4_conselheiro']
+                
+                db.session.commit()
+                return jsonify({'success': True, 'message': 'Mandato atualizado com sucesso!'})
+
+        # Cenário 2: CRIAR um novo mandato.
+        else:
+            mandato_existente = Escola.query.filter_by(ano_mandato=mandato_atual_ano).first()
+            if mandato_existente:
+                return jsonify({'success': False, 'message': f'Já existe um mandato para o ano {mandato_atual_ano}.'}), 409
+
+            nova_escola = Escola(
+                nome_escola=data['nome_escola'],
+                endereco=data['endereco'],
+                cidade=data['cidade'],
+                presidente_conselho=data['presidente_conselho'],
+                secretario_conselho=data['secretario_conselho'],
+                local_reuniao=data['local_reuniao'],
+                cnpj_conselho=data['cnpj_conselho'],
+                inep_escola=data['inep_escola'],
+                nome_1_conselheiro=data['nome_1_conselheiro'],
+                endereco_1_conselheiro=data['endereco_1_conselheiro'],
+                cpf_1_conselheiro=data['cpf_1_conselheiro'],
+                nome_2_conselheiro=data['nome_2_conselheiro'],
+                endereco_2_conselheiro=data['endereco_2_conselheiro'],
+                cpf_2_conselheiro=data['cpf_2_conselheiro'],
+                nome_3_conselheiro=data['nome_3_conselheiro'],
+                endereco_3_conselheiro=data['endereco_3_conselheiro'],
+                cpf_3_conselheiro=data['cpf_3_conselheiro'],
+                nome_4_conselheiro=data['nome_4_conselheiro'],
+                endereco_4_conselheiro=data['endereco_4_conselheiro'],
+                cpf_4_conselheiro=data['cpf_4_conselheiro'],
+                ano_mandato=mandato_atual_ano
+            )
+            db.session.add(nova_escola)
             db.session.commit()
-            return jsonify({'success': True, 'message': 'Mandato atualizado com sucesso!'})
+            return jsonify({'success': True, 'message': 'Novo mandato criado com sucesso!'})
 
-    # Cenário 2: CRIAR um novo mandato.
-    # Isso acontece se o usuário selecionou "Novo Mandato" ou se alterou o ano de um mandato existente.
-    else:
-        # PRIMEIRO, verifica se já existe um mandato com o novo ano para evitar duplicatas.
-        mandato_existente = Escola.query.filter_by(ano_mandato=mandato_atual_ano).first()
-        if mandato_existente:
-            return jsonify({'success': False, 'message': f'Já existe um mandato para o ano {mandato_atual_ano}.'}), 409 # 409 Conflict
-
-        
-        nova_escola = Escola(
-            nome_escola=data['nome_escola'],
-            endereco=data['endereco'],
-            cidade=data['cidade'],
-            presidente_conselho=data['presidente_conselho'],
-            secretario_conselho=data['secretario_conselho'],
-            local_reuniao=data['local_reuniao'],
-            cnpj_conselho=data['cnpj_conselho'],
-            inep_escola=data['inep_escola'],
-            nome_1_conselheiro=data['nome_1_conselheiro'],
-            endereco_1_conselheiro=data['endereco_1_conselheiro'],
-            cpf_1_conselheiro=data['cpf_1_conselheiro'],
-            nome_2_conselheiro=data['nome_2_conselheiro'],
-            endereco_2_conselheiro=data['endereco_2_conselheiro'],
-            cpf_2_conselheiro=data['cpf_2_conselheiro'],
-            nome_3_conselheiro=data['nome_3_conselheiro'],
-            endereco_3_conselheiro=data['endereco_3_conselheiro'],
-            cpf_3_conselheiro=data['cpf_3_conselheiro'],
-            nome_4_conselheiro=data['nome_4_conselheiro'],
-            endereco_4_conselheiro=data['endereco_4_conselheiro'],
-            cpf_4_conselheiro=data['cpf_4_conselheiro'],
-            ano_mandato=mandato_atual_ano # Usa o novo ano do mandato
-        )
-        db.session.add(nova_escola)
-        db.session.commit()
-        return jsonify({'success': True, 'message': 'Novo mandato criado com sucesso!'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Erro ao salvar no banco: {str(e)}'}), 500
 
 #LOGOS
 @app.route('/logos') 
